@@ -168,6 +168,8 @@ namespace JurisUtilityBase
 
             string cmt = Application.ProductName.ToString();
             WriteLog(cmt);
+
+            MessageBox.Show("Cash Receipt Allocation Completed.");
          
         }
 
