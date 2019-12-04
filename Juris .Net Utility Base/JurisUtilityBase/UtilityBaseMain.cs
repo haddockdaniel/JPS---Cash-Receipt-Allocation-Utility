@@ -217,7 +217,7 @@ namespace JurisUtilityBase
                         if (dtMY.Rows.Count == 0)
                         {
                             string s2 = "Insert into documenttree(dtdocid, dtsystemcreated, dtdocclass, dtdoctype, dtparentid, dttitle) " +
-                                  "select (select max(dtdocid)  + 1, 'Y', 5300,'F', 35,'" + MYFolder + "' from documenttree ";
+                                  "select max(dtdocid)  + 1, 'Y', 5300,'F', 35,'" + MYFolder + "' from documenttree ";
                             _jurisUtility.ExecuteNonQueryCommand(0, s2);
                             s2 = "Update sysparam set spnbrvalue=(select max(dtdocid) from documenttree) where spname='LastSysNbrDocTree'";
                             _jurisUtility.ExecuteNonQueryCommand(0, s2);
