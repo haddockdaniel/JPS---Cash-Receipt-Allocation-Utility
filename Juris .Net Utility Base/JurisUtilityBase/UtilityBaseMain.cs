@@ -167,10 +167,15 @@ namespace JurisUtilityBase
             string BatDepDate = tbDepDate.Text;
             string MYFolder = PYear + "-" + PNbr;
 
-           
+            string STest = "select crbbatchnbr from CashReceiptsBatch where crbstatus='U' and crbenteredby=1 and crbcomment like 'JPS-Cash Alloc Tool-' + '%'  ";
+            DataSet DT = _jurisUtility.RecordsetFromSQL(STest);
+            DataTable d1 = DT.Tables[0];
+
+            if (d1.Rows.Count == 0)
+            {
                 string SQL = "Insert into CashReceiptsBatch(crbbatchnbr, crbcomment, crbstatus, crbreccount, crbenteredby,crbdateentered, crbpostedby, crbdateposted, crbbatchtotal)" +
-                    " Values( (select spnbrvalue from sysparam where spname='LastBatchCash') + 1 ,'JPS-Cash Alloc Tool-' + '" + BatDepDate + "' + ' '  + cast((select spnbrvalue from sysparam where spname='LastBatchCash') + 1 as varchar(20))," +
-                    "'U' , 1 , 1 ,convert(varchar(10),getdate(),101) , 1 , convert(varchar(10),getdate(),101) , cast('" + BatRecAmount + "' as money) )";
+                     " Values( (select spnbrvalue from sysparam where spname='LastBatchCash') + 1 ,'JPS-Cash Alloc Tool-' + '" + BatDepDate + "' + ' '  + cast((select spnbrvalue from sysparam where spname='LastBatchCash') + 1 as varchar(20))," +
+                     "'U' , 1 , 1 ,convert(varchar(10),getdate(),101) , 1 , convert(varchar(10),getdate(),101) , cast('" + BatRecAmount + "' as money) )";
                 _jurisUtility.ExecuteNonQueryCommand(0, SQL);
 
                 SQL = "Update sysparam set spnbrvalue=spnbrvalue + 1 where spname='LastBatchCash'";
@@ -191,10 +196,11 @@ namespace JurisUtilityBase
                     {
                         string LastSys = dr["DTree"].ToString();
                         DOrder = dr["DOrder"].ToString();
-                        if(DOrder=="2")
-                        { string SPSql = "Select dtdocid from documenttree where dtparentid=35 and dtdocclass='5300' and dttitle='" + MYFolder + "'";
-                        DataSet spMY = _jurisUtility.RecordsetFromSQL(SPSql);
-                        DataTable dtMY = spMY.Tables[0];
+                        if (DOrder == "2")
+                        {
+                            string SPSql = "Select dtdocid from documenttree where dtparentid=35 and dtdocclass='5300' and dttitle='" + MYFolder + "'";
+                            DataSet spMY = _jurisUtility.RecordsetFromSQL(SPSql);
+                            DataTable dtMY = spMY.Tables[0];
                             if (dtMY.Rows.Count == 0)
                             {
                                 string s2 = "Insert into documenttree(dtdocid, dtsystemcreated, dtdocclass, dtdoctype, dtparentid, dttitle) " +
@@ -283,7 +289,7 @@ namespace JurisUtilityBase
                                     "select (select max(dtdocid) from documenttree) + 1, 'Y', 5300,'F', dtdocid,'" + MYFolder + "'" +
                                     " from documenttree where dtparentid=35 and dttitle='SMGR'";
                                 _jurisUtility.ExecuteNonQueryCommand(0, s2);
-                                
+
                                 s2 = "Update sysparam set spnbrvalue=(select max(dtdocid) from documenttree) where spname='LastSysNbrDocTree'";
                                 _jurisUtility.ExecuteNonQueryCommand(0, s2);
 
@@ -341,22 +347,34 @@ namespace JurisUtilityBase
                                     _jurisUtility.ExecuteNonQueryCommand(0, s2);
                                 }
                             }
-                        
+
+                        }
                     }
                 }
+                string sqlB = "select crbbatchnbr from cashreceiptsbatch where crbcomment= 'JPS-Cash Alloc Tool-' + '" + BatDepDate + "' + ' '  + cast((select spnbrvalue from sysparam where spname='LastBatchCash') as varchar(20))  and crbstatus='U' and crbreccount=1 " +
+                    " and convert(varchar(10),crbdateentered,101) =convert(varchar(10),getdate(),101)  and crbbatchtotal= cast('" + BatRecAmount + "' as money) ";
+                DataSet spBatch = _jurisUtility.RecordsetFromSQL(sqlB);
+                DataTable dtB = spBatch.Tables[0];
+                if (dtB.Rows.Count == 0)
+                { MessageBox.Show("Error Creating Cash Receipt Batch"); }
+                else
+                {
+                    foreach (DataRow dr in dtB.Rows)
+                    {
+                        singleBatch = dr["crbbatchnbr"].ToString();
+                    }
+
+                }
             }
-            string sqlB = "select crbbatchnbr from cashreceiptsbatch where crbcomment= 'JPS-Cash Alloc Tool-' + '" + BatDepDate + "' + ' '  + cast((select spnbrvalue from sysparam where spname='LastBatchCash') as varchar(20))  and crbstatus='U' and crbreccount=1 " +
-                " and convert(varchar(10),crbdateentered,101) =convert(varchar(10),getdate(),101)  and crbbatchtotal= cast('" + BatRecAmount + "' as money) ";
-            DataSet spBatch = _jurisUtility.RecordsetFromSQL(sqlB);
-            DataTable dtB = spBatch.Tables[0];
-            if (dtB.Rows.Count == 0)
-            { MessageBox.Show("Error Creating Cash Receipt Batch"); }
+
             else
             {
-                foreach (DataRow dr in dtB.Rows)
+                foreach (DataRow dr1 in d1.Rows)
                 {
-                    singleBatch = dr["crbbatchnbr"].ToString();
-                 }
+                    singleBatch = dr1["crbbatchnbr"].ToString();
+                    string s2 = "Update CashReceiptsBatch set crbreccount=crbreccount + 1 where crbbatchnbr=" + singleBatch;
+                    _jurisUtility.ExecuteNonQueryCommand(0, s2);
+                }
 
             }
         }
@@ -373,7 +391,7 @@ namespace JurisUtilityBase
             string SQL = "Insert into cashreceipt(crbatch, crrecnbr,crposted, crdate, crprdyear, crprdnbr, crchecknbr, crcheckdate, crcheckamt, crpayor, crarcsh, crppdcsh, crtrustcsh, crnonclicsh)" +
                 "select crbbatchnbr, crbreccount,'N',convert(datetime,'" + depDate + "',101) ," + PYear + "," + PNbr + ",'" + CkNbr + "','" + CkDate + "',cast('" + singleCheck + "' as money),'" + Payor +
               "',cast('" + singleAR + "' as money),cast('" + singlePPD + "' as money),cast('" + singleTrust + "' as money),cast('" + singleOther + "' as money) " +
-              "from cashreceiptsbatch where crbbatchnbr=" + singleBatch + " and crbbatchnbr not in (select crbatch from cashreceipt)";
+              "from cashreceiptsbatch where crbbatchnbr=" + singleBatch ;
             _jurisUtility.ExecuteNonQueryCommand(0, SQL);
 
 
@@ -710,7 +728,7 @@ namespace JurisUtilityBase
                 System.Data.OleDb.OleDbDataAdapter MyCommand;
                 MyConnection = new System.Data.OleDb.OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + fileName + ";Extended Properties='Excel 8.0;HDR=YES;';");
 
-                MyCommand = new System.Data.OleDb.OleDbDataAdapter("select * from [Sheet1$]", MyConnection);
+                MyCommand = new System.Data.OleDb.OleDbDataAdapter("select * from [Sheet1$] where [Amt_To_Allocate]<>0", MyConnection);
 
                 DtSet = new System.Data.DataSet();
                 MyCommand.Fill(DtSet);
