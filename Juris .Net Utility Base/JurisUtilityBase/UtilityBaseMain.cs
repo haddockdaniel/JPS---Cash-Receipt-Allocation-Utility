@@ -167,7 +167,7 @@ namespace JurisUtilityBase
             string BatDepDate = tbDepDate.Text;
             string MYFolder = PYear + "-" + PNbr;
 
-            string STest = "select crbbatchnbr from CashReceiptsBatch where crbstatus='U' and crbenteredby=1 and crbcomment like 'JPS-Cash Alloc Tool-' + '%'  ";
+            string STest = "select crbbatchnbr from CashReceiptsBatch where crbstatus='U' and crbenteredby=1 and crbcomment like 'JPS-Cash Alloc Tool-' + '" + BatDepDate + "' + '%'  ";
             DataSet DT = _jurisUtility.RecordsetFromSQL(STest);
             DataTable d1 = DT.Tables[0];
 
@@ -307,7 +307,7 @@ namespace JurisUtilityBase
                             }
                             else
                             {
-                                string SMGRSql = "Select dtdocid from documenttree where dtparentid=(Select dtdocid from documenttree where dtparentid=35  and dttitle='SMGR'and dttitle='" + MYFolder + "')";
+                                string SMGRSql = "Select dtdocid from documenttree where dtparentid=(Select dtdocid from documenttree where dtparentid=35  and dttitle='SMGR') and dttitle='" + MYFolder + "'";
                                 DataSet spSMGR = _jurisUtility.RecordsetFromSQL(SMGRSql);
                                 DataTable dtSMGR = spSMGR.Tables[0];
                                 if (dtSMGR.Rows.Count == 0)
